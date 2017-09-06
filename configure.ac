@@ -36,12 +36,21 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([malloc realloc gettimeofday inet_ntoa memset select setlocale socket strncasecmp strchr strrchr strstr])
 
-# Optional (but included-by-default) ssl support
+# Optional (but included-by-default) libtls support
 AC_ARG_WITH([ssl],
     AC_HELP_STRING([--without-ssl],[disable TLS support]), [], [with_ssl=yes])
 
+AC_ARG_WITH([ca_path],
+    AC_HELP_STRING([--with-ca-path=DIR],[set alternative CA path]), [],
+                   [with_ca_path="/etc/ssl/certs"])
+
+AS_IF([test "x$with_ca_path" = x],[
+    AC_MSG_FAILURE([no path specified for --with-ca-path])
+])
+
 AS_IF([test "x$with_ssl" != xno], [
-    AC_DEFINE([HAVE_SSL], [1], [SSL])
+    AC_DEFINE([HAVE_SSL], [1], [libtls])
+    AC_DEFINE_UNQUOTED([SSL_CA_PATH], ["$with_ca_path"], [CA Path])
     AC_SEARCH_LIBS([SSL_new], [ssl], [], [
         AC_MSG_ERROR([libssl not found])
     ])

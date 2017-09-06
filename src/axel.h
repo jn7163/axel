@@ -74,7 +74,7 @@
 #include <net/if.h>
 #include <pthread.h>
 #ifdef HAVE_SSL
-#include <openssl/ssl.h>
+#include <tls.h>
 #endif
 
 /* Internationalization */

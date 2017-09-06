@@ -143,7 +143,7 @@ tcp_read(tcp_t *tcp, void *buffer, int size)
 {
 #ifdef HAVE_SSL
 	if (tcp->ssl != NULL)
-		return SSL_read(tcp->ssl, buffer, size);
+		return tls_read(tcp->ssl, buffer, size);
 	else
 #endif				/* HAVE_SSL */
 		return read(tcp->fd, buffer, size);
@@ -154,7 +154,7 @@ tcp_write(tcp_t *tcp, void *buffer, int size)
 {
 #ifdef HAVE_SSL
 	if (tcp->ssl != NULL)
-		return SSL_write(tcp->ssl, buffer, size);
+		return tls_write(tcp->ssl, buffer, size);
 	else
 #endif				/* HAVE_SSL */
 		return write(tcp->fd, buffer, size);

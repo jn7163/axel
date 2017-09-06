@@ -41,67 +41,70 @@
 
 #ifdef HAVE_SSL
 
-#include <openssl/err.h>
-
-static pthread_mutex_t ssl_lock;
-static bool ssl_inited = false;
 static conf_t *conf = NULL;
 
 void
 ssl_init(conf_t *global_conf)
 {
-	pthread_mutex_init(&ssl_lock, NULL);
 	conf = global_conf;
+	tls_init();
 }
 
-void
-ssl_startup(void)
-{
-	pthread_mutex_lock(&ssl_lock);
-	if (!ssl_inited) {
-		SSL_library_init();
-		SSL_load_error_strings();
-
-		ssl_inited = true;
-	}
-	pthread_mutex_unlock(&ssl_lock);
-}
-
-SSL *
+struct tls *
 ssl_connect(int fd, char *hostname, char *message)
 {
+	struct tls *ctx;
 
-	SSL_CTX *ssl_ctx;
-	SSL *ssl;
-
-	ssl_startup();
-
-	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-	if (!conf->insecure) {
-		SSL_CTX_set_default_verify_paths(ssl_ctx);
-		SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
-	}
-	SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
-
-	ssl = SSL_new(ssl_ctx);
-	SSL_set_fd(ssl, fd);
-	SSL_set_tlsext_host_name(ssl, hostname);
-
-	int err = SSL_connect(ssl);
-	if (err <= 0) {
-		sprintf(message, _("SSL error: %s\n"),
-			ERR_reason_error_string(ERR_get_error()));
+	ctx = tls_client();
+	if (!ctx) {
+		sprintf(message, _("SSL error: can't create client object\n"));
 		return NULL;
 	}
 
-	return ssl;
+	/* configure some SSL settings */
+	struct tls_config *tls_conf = tls_config_new();
+	if (tls_config_set_ca_path(tls_conf, SSL_CA_PATH) < 0) {
+		fprintf(stderr, _("SSL error: %s\n"), tls_error(ctx));
+		goto err;
+	}
+
+	/* deactivate cert verification if specified by the user */
+	if (conf->insecure) {
+		tls_config_insecure_noverifyname(tls_conf);
+		tls_config_insecure_noverifycert(tls_conf);
+	}
+
+	if (tls_configure(ctx, tls_conf) < 0) {
+		sprintf(message, _("SSL error: %s\n"),
+			tls_config_error(tls_conf));
+		goto err;
+	}
+	tls_config_free(tls_conf);
+
+	if (tls_connect_socket(ctx, fd, hostname) < 0) {
+		sprintf(message, _("SSL error: %s\n"), tls_error(ctx));
+		goto err;
+	}
+
+	/* perform TLS handshake explicitly now to have a chance to get
+	 * any error. Otherwise tls_read/write would do it implicitly for us
+	 */
+	if (tls_handshake(ctx) < 0) {
+		sprintf(message, _("SSL error: %s\n"), tls_error(ctx));
+		goto err;
+	}
+
+	return ctx;
+err:
+	ssl_disconnect(ctx);
+	return NULL;
 }
 
 void
-ssl_disconnect(SSL *ssl)
+ssl_disconnect(struct tls *ctx)
 {
-	SSL_shutdown(ssl);
-	SSL_free(ssl);
+	tls_close(ctx);
+	tls_free(ctx);
 }
 
 #endif				/* HAVE_SSL */

@@ -41,9 +41,14 @@
 
 #ifdef HAVE_SSL
 
-void ssl_init(conf_t *conf);
-SSL *ssl_connect(int fd, char *hostname, char *message);
-void ssl_disconnect(SSL *ssl);
+void
+ssl_init(conf_t *conf);
+
+struct tls *
+ssl_connect(int fd, char *hostname, char *message);
+
+void
+ssl_disconnect(struct tls *ssl);
 
 #endif				/* HAVE_SSL */
 
