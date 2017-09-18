@@ -41,7 +41,7 @@
 
 #ifdef HAVE_SSL
 
-void
+int
 ssl_init(conf_t *conf);
 
 struct tls *

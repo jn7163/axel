@@ -45,6 +45,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <time.h>
 #include <ctype.h>
 #include <fcntl.h>

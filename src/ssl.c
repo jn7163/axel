@@ -43,11 +43,11 @@
 
 static conf_t *conf = NULL;
 
-void
+int
 ssl_init(conf_t *global_conf)
 {
 	conf = global_conf;
-	tls_init();
+	return tls_init();
 }
 
 struct tls *

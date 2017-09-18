@@ -220,8 +220,8 @@ main(int argc, char *argv[])
 		return 1;
 	}
 #ifdef HAVE_SSL
-	ssl_init(conf);
-#endif				/* HAVE_SSL */
+	assert(ssl_init(conf) == 0);
+#endif /* HAVE_SSL */
 
 	if (argc - optind == 0) {
 		print_help();
