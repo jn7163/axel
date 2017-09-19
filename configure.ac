@@ -50,6 +50,8 @@ AS_IF([test "x$with_ca_path" = x],[
 
 AS_IF([test "x$with_ssl" != xno], [
     AC_DEFINE([HAVE_SSL], [1], [libtls])
+    AC_DEFINE([CRYPTO_OPENSSL], [1], [openssl])
+    CFLAGS="$CFLAGS -lbsd"
     AC_DEFINE_UNQUOTED([SSL_CA_PATH], ["$with_ca_path"], [CA Path])
     AC_SEARCH_LIBS([SSL_new], [ssl], [], [
         AC_MSG_ERROR([libssl not found])
